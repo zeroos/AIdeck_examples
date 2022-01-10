@@ -12,6 +12,16 @@
 #define CAM_HEIGHT   240
 #endif
 
+#define         HIMAX_AE_CTRL             0x2100
+// Sensor exposure gain control
+#define         HIMAX_INTEGRATION_H       0x0202
+#define         HIMAX_INTEGRATION_L       0x0203
+#define         HIMAX_ANALOG_GAIN         0x0205
+#define         HIMAX_DIGITAL_GAIN_H      0x020E
+#define         HIMAX_DIGITAL_GAIN_L      0x020F
+
+#define         AE_TARGET_MEAN            0x2101
+
 static pi_task_t task1;
 static pi_task_t task2;
 static unsigned char *imgBuff0;
@@ -26,10 +36,21 @@ static volatile int stream1_done;
 static volatile int stream2_done;
 
 static void streamer_handler(void *arg);
+uint8_t gain=0;
 
 
 static void cam_handler(void *arg)
 {
+
+
+  pi_camera_reg_set(&camera, HIMAX_ANALOG_GAIN, &gain);
+  pi_camera_reg_set(&camera, HIMAX_DIGITAL_GAIN_H, &gain);
+  pi_camera_reg_set(&camera, HIMAX_DIGITAL_GAIN_L, &gain);
+  pi_camera_reg_set(&camera, HIMAX_INTEGRATION_H, &gain);
+  pi_camera_reg_set(&camera, HIMAX_INTEGRATION_L, &gain);
+  //pi_camera_reg_set(&camera, AE_TARGET_MEAN, &gain);
+  gain ++;
+  printf("GAIN %d\n", gain);
   pi_camera_control(&camera, PI_CAMERA_CMD_STOP, 0);
 
   stream1_done = 0;
@@ -48,7 +69,13 @@ static void streamer_handler(void *arg)
   if (stream1_done) // && stream2_done)
   {
     pi_camera_capture_async(&camera, imgBuff0, CAM_WIDTH*CAM_HEIGHT, pi_task_callback(&task1, cam_handler, NULL));
+
+
+
+
     pi_camera_control(&camera, PI_CAMERA_CMD_START, 0);
+
+
   }
 }
 
@@ -194,6 +221,12 @@ int main()
     return -1;
   }
   printf("Opened WIFI\n");
+
+
+
+
+  uint8_t ae_ctrl=0;
+  pi_camera_reg_set(&camera, HIMAX_AE_CTRL, &ae_ctrl);
 
 
 
